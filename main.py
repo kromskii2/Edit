@@ -41,6 +41,7 @@ while True:
         minSize=(30, 30)
     )
 
+    
     # Сохранение каждого нового обнаруженного лица
     for i, (x, y, w, h) in enumerate(faces):
         face_img = frame[y:y + h, x:x + w]
