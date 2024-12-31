@@ -15,48 +15,42 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Кэшируем зависимости (npm, node_modules)
-      - name: Cache
+      # 2. (Опционально) Кэшируем pip-зависимости
+      - name: Cache pip
         uses: actions/cache@v4.2.0
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-pip-
 
-      # 3. Устанавливаем Node.js (версия 18)
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v4.1.0
+      # 3. Устанавливаем Python 3.10
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          node-version: '18'
-          check-latest: true
+          python-version: '3.10'
+          cache: 'pip'  # Дополнительное кэширование pip. Можно отключить, если выше используете ручной кэш.
 
       # 4. Устанавливаем зависимости
       - name: Install dependencies
-        run: npm install
+        run: pip install --upgrade pip && pip install -r requirements.txt
 
-      # 5. Сборка проекта (замените команду при необходимости)
-      - name: Build project
-        run: npm run build
-
-      # 6. Сборка Docker-образа
+      # 5. Собираем Docker-образ (следите, чтобы Dockerfile учитывал Python)
       - name: Build Docker image
         run: docker build -t face-saver:latest .
 
-      # 7. (При необходимости) Запушить Docker-образ в реестр
+      # 6. (Опционально) Пушим Docker-образ в Docker Hub/GHCR
       # - name: Login to Docker Hub
       #   run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       #
       # - name: Push Docker image
       #   run: docker push face-saver:latest
 
-      # 8. Отправка статуса в Telegram
+      # 7. Отправляем статус в Telegram
       - name: Tele-status
         uses: kohchihao/tele-status@0.0.4
         with:
-          # Chat ID
+          # В реальном проекте используйте Secrets!
           chat: "6677130873"
-          # Telegram Bot token
           token: "7097410331:AAHdQNxfgE5q_N90KHizMwWWmtBVFdhVttw"
-          # Отправляем статус сборки
           status: ${{ job.status }}
